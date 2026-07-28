@@ -24,6 +24,7 @@ import {
   AlertDialogMedia,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { generateAnimeSchedule } from '@/lib/schedule-generator'
 import { generateId, getAnimePlanById, saveAnimePlan } from '@/lib/storage'
@@ -230,17 +231,17 @@ export default function CreatePageContent() {
       {/* ===== Header ===== */}
       <header className="sticky top-0 z-50 border-b border-white/4 bg-[#0a0a1a]/70 backdrop-blur-2xl">
         <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-4">
-          <button
-            className="group flex cursor-pointer items-center gap-2.5"
+          <Button
+            className="group flex cursor-pointer items-center gap-2.5 bg-transparent p-0 hover:bg-transparent"
             onClick={() => confirmNavigation(() => router.push('/'))}
-            type="button"
+            variant="ghost"
           >
             <div className="relative flex size-8 items-center justify-center rounded-lg bg-linear-to-br from-purple-600 to-blue-600 text-sm font-bold text-white shadow-lg shadow-purple-500/25 transition-all duration-300 group-hover:shadow-purple-500/40">
               A
               <div className="absolute inset-0 rounded-lg ring-1 ring-white/20 ring-inset" />
             </div>
             <span className="text-sm font-bold text-white">AniPlan</span>
-          </button>
+          </Button>
 
           {/* Step indicator */}
           <div className="hidden items-center gap-2 sm:flex">
@@ -350,12 +351,17 @@ export default function CreatePageContent() {
               <div className="text-center">
                 <motion.div
                   animate={{ opacity: 1, y: 0 }}
-                  className="mb-4 inline-flex items-center gap-2 rounded-full border border-purple-500/20 bg-purple-500/10 px-3 py-1"
+                  className="mb-4"
                   initial={{ opacity: 0, y: -10 }}
                   transition={{ delay: 0.05, duration: 0.3 }}
                 >
-                  <span className="text-xs">🔍</span>
-                  <span className="text-[11px] font-medium text-purple-300">Etapa 1 de 3</span>
+                  <Badge
+                    className="h-auto gap-2 rounded-full border-purple-500/20 bg-purple-500/10 px-3 py-1 text-purple-300"
+                    variant="outline"
+                  >
+                    <span className="text-xs">🔍</span>
+                    <span className="text-[11px] font-medium">Etapa 1 de 3</span>
+                  </Badge>
                 </motion.div>
                 <h1 className="text-2xl font-bold text-white">Qual anime você quer maratonar?</h1>
                 <p className="mt-1 text-sm text-white/40">
@@ -379,12 +385,17 @@ export default function CreatePageContent() {
               <div className="text-center">
                 <motion.div
                   animate={{ opacity: 1, y: 0 }}
-                  className="mb-4 inline-flex items-center gap-2 rounded-full border border-purple-500/20 bg-purple-500/10 px-3 py-1"
+                  className="mb-4"
                   initial={{ opacity: 0, y: -10 }}
                   transition={{ delay: 0.05, duration: 0.3 }}
                 >
-                  <span className="text-xs">⚙️</span>
-                  <span className="text-[11px] font-medium text-purple-300">Etapa 2 de 3</span>
+                  <Badge
+                    className="h-auto gap-2 rounded-full border-purple-500/20 bg-purple-500/10 px-3 py-1 text-purple-300"
+                    variant="outline"
+                  >
+                    <span className="text-xs">⚙️</span>
+                    <span className="text-[11px] font-medium">Etapa 2 de 3</span>
+                  </Badge>
                 </motion.div>
                 <h1 className="text-2xl font-bold text-white">Configure sua rotina</h1>
                 <p className="mt-1 text-sm text-white/40">
@@ -392,8 +403,8 @@ export default function CreatePageContent() {
                 </p>
               </div>
               <div className="flex items-center">
-                <button
-                  className="mb-2 flex items-center gap-1 text-xs text-white/40 transition-colors hover:text-purple-400"
+                <Button
+                  className="mb-2 flex items-center gap-1 text-xs text-white/40 hover:text-purple-400"
                   onClick={() => {
                     setSelectedAnime(null)
                     setStep(0)
@@ -404,7 +415,8 @@ export default function CreatePageContent() {
                     setTotalDays(0)
                     setHasModified(false)
                   }}
-                  type="button"
+                  size="sm"
+                  variant="ghost"
                 >
                   <svg className="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
@@ -415,7 +427,7 @@ export default function CreatePageContent() {
                     />
                   </svg>
                   Trocar anime
-                </button>
+                </Button>
               </div>
               <RoutineForm
                 anime={selectedAnime}
@@ -442,12 +454,17 @@ export default function CreatePageContent() {
               <div className="text-center">
                 <motion.div
                   animate={{ opacity: 1, y: 0 }}
-                  className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1"
+                  className="mb-4"
                   initial={{ opacity: 0, y: -10 }}
                   transition={{ delay: 0.05, duration: 0.3 }}
                 >
-                  <span className="text-xs">📋</span>
-                  <span className="text-[11px] font-medium text-emerald-300">Etapa 3 de 3</span>
+                  <Badge
+                    className="h-auto gap-2 rounded-full border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-emerald-300"
+                    variant="outline"
+                  >
+                    <span className="text-xs">📋</span>
+                    <span className="text-[11px] font-medium">Etapa 3 de 3</span>
+                  </Badge>
                 </motion.div>
                 <h1 className="text-2xl font-bold text-white">Cronograma gerado!</h1>
                 <p className="mt-1 text-sm text-white/40">Revise os detalhes antes de salvar</p>

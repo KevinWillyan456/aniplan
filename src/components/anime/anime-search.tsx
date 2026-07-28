@@ -140,28 +140,40 @@ export function AnimeSearch({ onSelect, selectedAnime }: AnimeSearchProps) {
       {source && results.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
           {source === 'kitsu' && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/20 bg-blue-500/10 px-2.5 py-0.5 text-[10px] font-medium text-blue-400">
+            <Badge
+              className="h-auto gap-1 rounded-full border-blue-500/20 bg-blue-500/10 px-2.5 py-0.5 text-[10px] text-blue-400"
+              variant="outline"
+            >
               <span className="size-1.5 rounded-full bg-blue-500" />
               Kitsu
-            </span>
+            </Badge>
           )}
           {source === 'anilist' && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-purple-500/20 bg-purple-500/10 px-2.5 py-0.5 text-[10px] font-medium text-purple-400">
+            <Badge
+              className="h-auto gap-1 rounded-full border-purple-500/20 bg-purple-500/10 px-2.5 py-0.5 text-[10px] text-purple-400"
+              variant="outline"
+            >
               <span className="size-1.5 rounded-full bg-purple-500" />
               AniList
-            </span>
+            </Badge>
           )}
           {source === 'jikan' && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-medium text-emerald-400">
+            <Badge
+              className="h-auto gap-1 rounded-full border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] text-emerald-400"
+              variant="outline"
+            >
               <span className="size-1.5 rounded-full bg-emerald-500" />
               MyAnimeList (fallback)
-            </span>
+            </Badge>
           )}
           {source === 'popular' && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-medium text-amber-400">
+            <Badge
+              className="h-auto gap-1 rounded-full border-amber-500/20 bg-amber-500/10 px-2.5 py-0.5 text-[10px] text-amber-400"
+              variant="outline"
+            >
               <span className="size-1.5 rounded-full bg-amber-500" />
               Modo offline
-            </span>
+            </Badge>
           )}
         </div>
       )}

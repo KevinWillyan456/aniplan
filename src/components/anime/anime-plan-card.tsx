@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 
 import { ProgressBar } from './progress-bar'
 
@@ -59,19 +60,21 @@ export function AnimePlanCard({ onDelete, plan }: AnimePlanCardProps) {
       <Link href={`/anime/${plan.id}`}>
         <div className="flex gap-3 overflow-hidden p-4 sm:gap-4">
           {/* Image */}
-          <div className="relative size-20 shrink-0 overflow-hidden rounded-lg sm:size-24">
+          <div className="relative size-16 shrink-0 overflow-hidden rounded-lg sm:size-20 lg:size-24">
             <Image
               alt={plan.anime.title}
               className="object-cover transition-transform duration-200 group-hover:scale-105"
               fill
-              sizes="96px"
+              sizes="(max-width: 640px) 64px, (max-width: 1024px) 80px, 96px"
               src={plan.anime.image}
             />
           </div>
 
           {/* Info */}
           <div className="flex min-w-0 flex-1 flex-col justify-between gap-2">
-            <h3 className="truncate text-base font-semibold text-white">{plan.anime.title}</h3>
+            <h3 className="line-clamp-2 text-sm font-semibold wrap-break-word text-white sm:line-clamp-none sm:text-base">
+              {plan.anime.title}
+            </h3>
 
             <div className="flex flex-wrap gap-1.5">
               <Badge className="border-blue-500/30 bg-blue-500/10 text-blue-400" variant="outline">
@@ -116,11 +119,12 @@ export function AnimePlanCard({ onDelete, plan }: AnimePlanCardProps) {
       {/* Delete button - visible on hover (desktop) and always visible on mobile */}
       {onDelete && (
         <>
-          <button
-            className="absolute top-2 right-2 z-10 flex size-7 items-center justify-center rounded-lg bg-red-500/10 text-red-400/60 opacity-0 transition-all duration-200 group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-400 max-sm:opacity-100"
+          <Button
+            className="absolute top-2 right-2 z-10 flex size-7 items-center justify-center rounded-lg bg-red-500/10 text-red-400/60 opacity-0 transition-all duration-200 hover:bg-red-500/20 hover:text-red-400 max-sm:opacity-100"
             onClick={handleDeleteClick}
+            size="icon-xs"
             title="Excluir maratona"
-            type="button"
+            variant="ghost"
           >
             <svg className="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -130,7 +134,7 @@ export function AnimePlanCard({ onDelete, plan }: AnimePlanCardProps) {
                 strokeWidth={2}
               />
             </svg>
-          </button>
+          </Button>
 
           <AlertDialog onOpenChange={setDeleteDialogOpen} open={deleteDialogOpen}>
             <AlertDialogContent className="border border-white/6 bg-[#1a1a2e] text-white">

@@ -8,6 +8,8 @@ import { startTransition, useEffect, useRef } from 'react'
 
 import type { AnimePlan, Schedule } from '@/types/anime'
 
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { getEpisodeNumberInSeason, getEpisodeSeason } from '@/types/anime'
 
@@ -197,7 +199,7 @@ export function EpisodeList({ onBatchToggle, onToggleEpisode, plan }: EpisodeLis
             else if (t.key === 'upcoming') count = allDates.filter((d) => d > todayStr).length
 
             return (
-              <button
+              <Button
                 className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all duration-200 ${
                   tab === t.key
                     ? 'bg-purple-500/20 text-purple-300 shadow-sm'
@@ -205,7 +207,8 @@ export function EpisodeList({ onBatchToggle, onToggleEpisode, plan }: EpisodeLis
                 }`}
                 key={t.key}
                 onClick={() => changeTab(t.key)}
-                type="button"
+                size="sm"
+                variant="ghost"
               >
                 {t.label}
                 {count > 0 && (
@@ -219,7 +222,7 @@ export function EpisodeList({ onBatchToggle, onToggleEpisode, plan }: EpisodeLis
                     {count}
                   </span>
                 )}
-              </button>
+              </Button>
             )
           })}
         </div>
@@ -319,7 +322,7 @@ export function EpisodeList({ onBatchToggle, onToggleEpisode, plan }: EpisodeLis
                 <span className="hidden sm:inline">Sessões por página:</span>
                 <div className="flex gap-1">
                   {ITEMS_PER_PAGE_OPTIONS.map((opt) => (
-                    <button
+                    <Button
                       className={`rounded-md px-2 py-1 text-xs font-medium transition-all duration-200 ${
                         itemsPerPage === opt
                           ? 'bg-purple-500/20 text-purple-400'
@@ -327,34 +330,37 @@ export function EpisodeList({ onBatchToggle, onToggleEpisode, plan }: EpisodeLis
                       }`}
                       key={opt}
                       onClick={() => handleItemsPerPageChange(opt)}
-                      type="button"
+                      size="xs"
+                      variant="ghost"
                     >
                       {opt}
-                    </button>
+                    </Button>
                   ))}
-                  <button
+                  <Button
                     className={`rounded-md px-2 py-1 text-xs font-medium transition-all duration-200 ${
                       itemsPerPage === 0
                         ? 'bg-purple-500/20 text-purple-400'
                         : 'text-white/40 hover:bg-white/5 hover:text-white/60'
                     }`}
                     onClick={() => handleItemsPerPageChange(0)}
-                    type="button"
+                    size="xs"
+                    variant="ghost"
                   >
                     Tudo
-                  </button>
+                  </Button>
                 </div>
               </div>
 
               {/* Page controls */}
               <div className="flex items-center gap-1">
                 {/* First */}
-                <button
-                  className="flex size-7 items-center justify-center rounded-md text-xs text-white/40 transition-all duration-200 hover:bg-white/5 hover:text-white/60 disabled:opacity-20 disabled:hover:bg-transparent"
+                <Button
+                  className="flex size-7 items-center justify-center rounded-md text-xs text-white/40 hover:bg-white/5 hover:text-white/60 disabled:opacity-20 disabled:hover:bg-transparent"
                   disabled={safeCurrentPage === 0}
                   onClick={() => setEpParams({ epPage: 0 })}
+                  size="icon-xs"
                   title="Primeira página"
-                  type="button"
+                  variant="ghost"
                 >
                   <svg className="size-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
@@ -370,15 +376,16 @@ export function EpisodeList({ onBatchToggle, onToggleEpisode, plan }: EpisodeLis
                       strokeWidth={2}
                     />
                   </svg>
-                </button>
+                </Button>
 
                 {/* Previous */}
-                <button
-                  className="flex size-7 items-center justify-center rounded-md text-xs text-white/40 transition-all duration-200 hover:bg-white/5 hover:text-white/60 disabled:opacity-20 disabled:hover:bg-transparent"
+                <Button
+                  className="flex size-7 items-center justify-center rounded-md text-xs text-white/40 hover:bg-white/5 hover:text-white/60 disabled:opacity-20 disabled:hover:bg-transparent"
                   disabled={safeCurrentPage === 0}
                   onClick={() => setEpParams({ epPage: safeCurrentPage - 1 })}
+                  size="icon-xs"
                   title="Página anterior"
-                  type="button"
+                  variant="ghost"
                 >
                   <svg className="size-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
@@ -388,7 +395,7 @@ export function EpisodeList({ onBatchToggle, onToggleEpisode, plan }: EpisodeLis
                       strokeWidth={2}
                     />
                   </svg>
-                </button>
+                </Button>
 
                 {/* Page numbers */}
                 <div className="mx-1 flex items-center gap-0.5">
@@ -401,7 +408,7 @@ export function EpisodeList({ onBatchToggle, onToggleEpisode, plan }: EpisodeLis
                         ...
                       </span>
                     ) : (
-                      <button
+                      <Button
                         className={`flex size-7 items-center justify-center rounded-md text-xs font-medium transition-all duration-200 ${
                           page === safeCurrentPage
                             ? 'bg-purple-500/20 text-purple-400'
@@ -409,21 +416,23 @@ export function EpisodeList({ onBatchToggle, onToggleEpisode, plan }: EpisodeLis
                         }`}
                         key={page}
                         onClick={() => setEpParams({ epPage: page })}
-                        type="button"
+                        size="icon-xs"
+                        variant="ghost"
                       >
                         {page + 1}
-                      </button>
+                      </Button>
                     ),
                   )}
                 </div>
 
                 {/* Next */}
-                <button
-                  className="flex size-7 items-center justify-center rounded-md text-xs text-white/40 transition-all duration-200 hover:bg-white/5 hover:text-white/60 disabled:opacity-20 disabled:hover:bg-transparent"
+                <Button
+                  className="flex size-7 items-center justify-center rounded-md text-xs text-white/40 hover:bg-white/5 hover:text-white/60 disabled:opacity-20 disabled:hover:bg-transparent"
                   disabled={safeCurrentPage >= totalPages - 1}
                   onClick={() => setEpParams({ epPage: safeCurrentPage + 1 })}
+                  size="icon-xs"
                   title="Próxima página"
-                  type="button"
+                  variant="ghost"
                 >
                   <svg className="size-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
@@ -433,15 +442,16 @@ export function EpisodeList({ onBatchToggle, onToggleEpisode, plan }: EpisodeLis
                       strokeWidth={2}
                     />
                   </svg>
-                </button>
+                </Button>
 
                 {/* Last */}
-                <button
-                  className="flex size-7 items-center justify-center rounded-md text-xs text-white/40 transition-all duration-200 hover:bg-white/5 hover:text-white/60 disabled:opacity-20 disabled:hover:bg-transparent"
+                <Button
+                  className="flex size-7 items-center justify-center rounded-md text-xs text-white/40 hover:bg-white/5 hover:text-white/60 disabled:opacity-20 disabled:hover:bg-transparent"
                   disabled={safeCurrentPage >= totalPages - 1}
                   onClick={() => setEpParams({ epPage: totalPages - 1 })}
+                  size="icon-xs"
                   title="Última página"
-                  type="button"
+                  variant="ghost"
                 >
                   <svg className="size-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
@@ -457,7 +467,7 @@ export function EpisodeList({ onBatchToggle, onToggleEpisode, plan }: EpisodeLis
                       strokeWidth={2}
                     />
                   </svg>
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -547,20 +557,23 @@ function ScheduleDay({
 
         <div className="ml-auto flex shrink-0 items-center gap-1.5">
           {onBatchToggle && (
-            <button
-              className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-medium text-white/50 transition-all duration-200 hover:border-purple-500/30 hover:bg-purple-500/10 hover:text-purple-400"
-              onClick={(e) => {
-                e.preventDefault()
+            <Button
+              className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-medium text-white/50 hover:border-purple-500/30 hover:bg-purple-500/10 hover:text-purple-400"
+              onClick={() => {
                 const allWatched = episodes.every((ep) => watchedEpisodes.includes(ep))
                 onBatchToggle(episodes, !allWatched)
               }}
-              type="button"
+              size="xs"
+              variant="ghost"
             >
               {episodes.every((ep) => watchedEpisodes.includes(ep)) ? 'Desmarcar' : 'Marcar todos'}
-            </button>
+            </Button>
           )}
           {hasDelay && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-red-500/15 px-2.5 py-0.5 text-[10px] font-medium text-red-400">
+            <Badge
+              className="gap-1 rounded-full border-0 bg-red-500/15 px-2.5 py-0.5 text-[10px] text-red-400"
+              variant="outline"
+            >
               <svg className="size-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
@@ -570,12 +583,15 @@ function ScheduleDay({
                 />
               </svg>
               Atrasado
-            </span>
+            </Badge>
           )}
           {isToday && (
-            <span className="rounded-full bg-purple-500/20 px-2.5 py-0.5 text-[10px] font-medium text-purple-400">
+            <Badge
+              className="rounded-full border-0 bg-purple-500/20 px-2.5 py-0.5 text-[10px] text-purple-400"
+              variant="outline"
+            >
               Hoje
-            </span>
+            </Badge>
           )}
         </div>
       </div>

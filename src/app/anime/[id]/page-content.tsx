@@ -180,19 +180,19 @@ export default function AnimeDetailContent() {
       </div>
 
       {/* ===== Header ===== */}
-      <header className="border-white/4#0a0a1a]/70 sticky top-0 z-50 border-b backdrop-blur-2xl">
+      <header className="sticky top-0 z-50 border-b border-white/4 bg-[#0a0a1a]/70 backdrop-blur-2xl">
         <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-4">
-          <button
-            className="group flex cursor-pointer items-center gap-2.5"
+          <Button
+            className="group flex cursor-pointer items-center gap-2.5 bg-transparent p-0 hover:bg-transparent"
             onClick={() => router.push('/')}
-            type="button"
+            variant="ghost"
           >
             <div className="relative flex size-8 items-center justify-center rounded-lg bg-linear-to-br from-purple-600 to-blue-600 text-sm font-bold text-white shadow-lg shadow-purple-500/25 transition-all duration-300 group-hover:shadow-purple-500/40">
               A
               <div className="absolute inset-0 rounded-lg ring-1 ring-white/20 ring-inset" />
             </div>
             <span className="text-sm font-bold text-white">AniPlan</span>
-          </button>
+          </Button>
 
           <div className="flex items-center gap-1.5">
             {/* Edit button */}
@@ -233,7 +233,7 @@ export default function AnimeDetailContent() {
                   Excluir
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent className="border-white/6#1a1a2e] border text-white">
+              <AlertDialogContent className="border border-white/6 bg-[#1a1a2e] text-white">
                 <AlertDialogHeader>
                   <AlertDialogMedia className="bg-red-500/10 text-red-400">
                     <svg className="size-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -564,27 +564,29 @@ export default function AnimeDetailContent() {
             </div>
             <div className="flex items-center gap-1.5">
               {watchedCount >= totalEpisodes ? (
-                <button
-                  className="rounded-md border border-white/4 bg-white/2 px-2.5 py-1 text-xs text-white/40 transition-all duration-200 hover:border-purple-500/30 hover:bg-purple-500/10 hover:text-purple-400"
+                <Button
+                  className="border border-white/4 bg-white/2 px-2.5 py-1 text-xs text-white/40 hover:border-purple-500/30 hover:bg-purple-500/10 hover:text-purple-400"
                   onClick={() => {
                     handleBatchToggle(
                       plan.schedule.flatMap((s) => s.episodes),
                       false,
                     )
                   }}
-                  type="button"
+                  size="sm"
+                  variant="ghost"
                 >
                   Desmarcar tudo
-                </button>
+                </Button>
               ) : (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <button
-                      className="rounded-md border border-purple-500/20 bg-purple-500/10 px-2.5 py-1 text-xs text-purple-400 transition-all duration-200 hover:border-purple-500/40 hover:bg-purple-500/20"
-                      type="button"
+                    <Button
+                      className="rounded-md border border-purple-500/20 bg-purple-500/10 px-2.5 py-1 text-xs text-purple-400 hover:border-purple-500/40 hover:bg-purple-500/20"
+                      size="sm"
+                      variant="ghost"
                     >
                       ✓ Marcar tudo
-                    </button>
+                    </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent className="border border-white/6 bg-[#1a1a2e] text-white">
                     <AlertDialogHeader>

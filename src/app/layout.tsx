@@ -6,7 +6,6 @@ import './globals.css'
 
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
 
-import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from '@/components/ui/sonner'
 import { cn } from '@/lib/utils'
 
@@ -27,17 +26,10 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html className={cn('font-sans', inter.variable)} lang="pt-BR" suppressHydrationWarning>
+    <html className={cn('font-sans', inter.variable)} lang="pt-BR">
       <body className="antialiased">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          disableTransitionOnChange
-          enableSystem
-        >
-          <NuqsAdapter>{children}</NuqsAdapter>
-          <Toaster />
-        </ThemeProvider>
+        <NuqsAdapter>{children}</NuqsAdapter>
+        <Toaster />
       </body>
     </html>
   )

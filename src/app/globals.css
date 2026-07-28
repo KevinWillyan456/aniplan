@@ -2,8 +2,6 @@
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
 
-@custom-variant dark (&:is(.dark *));
-
 @theme inline {
   --font-heading: var(--font-sans);
   --font-sans: var(--font-sans);
@@ -49,42 +47,6 @@
 }
 
 :root {
-  --background: #f2f2f2;
-  --foreground: #0d0d0d;
-  --card: #ffffff;
-  --card-foreground: #0d0d0d;
-  --popover: #ffffff;
-  --popover-foreground: #0d0d0d;
-  --primary: #308c36;
-  --primary-foreground: #f2f2f2;
-  --secondary: #267331;
-  --secondary-foreground: #f2f2f2;
-  --muted: #e6e6e6;
-  --muted-foreground: #666666;
-  --accent: #bf2431;
-  --accent-foreground: #f2f2f2;
-  --destructive: #bf2431;
-  --border: #d9d9d9;
-  --input: #ffffff;
-  --ring: #308c36;
-  --chart-1: #308c36;
-  --chart-2: #267331;
-  --chart-3: #bf2431;
-  --chart-4: #4fa854;
-  --chart-5: #8c1b24;
-  --table: #ffffff;
-  --radius: 0.625rem;
-  --sidebar: #ffffff;
-  --sidebar-foreground: #0d0d0d;
-  --sidebar-primary: #308c36;
-  --sidebar-primary-foreground: #f2f2f2;
-  --sidebar-accent: #bf2431;
-  --sidebar-accent-foreground: #f2f2f2;
-  --sidebar-border: #d9d9d9;
-  --sidebar-ring: #308c36;
-}
-
-.dark {
   --background: #0d0d0d;
   --foreground: #f2f2f2;
   --card: #181818;
@@ -109,6 +71,7 @@
   --chart-4: #4fa854;
   --chart-5: #8c1b24;
   --table: #181818;
+  --radius: 0.625rem;
   --sidebar: #181818;
   --sidebar-foreground: #f2f2f2;
   --sidebar-primary: #308c36;
@@ -163,6 +126,26 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
+}
+
+/* Firefox scrollbar support */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+/* Utility class for thin scrollbar on specific containers */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
 }
 
 /* Remove input number arrows */

@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from 'motion/react'
 import Link from 'next/link'
-import { parseAsStringEnum, useQueryState } from 'nuqs'
+import { parseAsInteger, parseAsStringEnum, useQueryState } from 'nuqs'
 import { startTransition, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -41,6 +41,12 @@ export default function HomePageContent() {
     parseAsStringEnum(['all', 'completed', 'in-progress'] as const).withDefault('all'),
   )
 
+  const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(0))
+  const [perPage, setPerPage] = useQueryState('perPage', parseAsInteger.withDefault(8))
+
+  const ITEMS_PER_PAGE_OPTIONS = [4, 8, 12, 24] as const
+  const safePerPage = ITEMS_PER_PAGE_OPTIONS.includes(perPage as never) ? perPage : 8
+
   const completedPlans = plans.filter(
     (p) => (p.watchedEpisodes?.length ?? 0) >= (p.totalEpisodes ?? p.anime.episodes),
   )
@@ -50,6 +56,37 @@ export default function HomePageContent() {
 
   const filteredPlans =
     tab === 'all' ? plans : tab === 'completed' ? completedPlans : inProgressPlans
+
+  const totalPages = Math.max(1, Math.ceil(filteredPlans.length / safePerPage))
+  const safePage = Math.min(page, totalPages - 1)
+
+  const paginatedPlans = filteredPlans.slice(safePage * safePerPage, (safePage + 1) * safePerPage)
+
+  function handlePerPageChange(value: number) {
+    setPerPage(value)
+    setPage(0)
+  }
+
+  function handleTabChange(key: 'all' | 'completed' | 'in-progress') {
+    setTab(key)
+    setPage(0)
+  }
+
+  function getPageNumbers(currentPage: number, totalPages: number): ('ellipsis' | number)[] {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i)
+    }
+    const pages: ('ellipsis' | number)[] = [0]
+    if (currentPage > 3) pages.push('ellipsis')
+    const start = Math.max(1, currentPage - 1)
+    const end = Math.min(totalPages - 2, currentPage + 1)
+    for (let i = start; i <= end; i++) pages.push(i)
+    if (currentPage < totalPages - 4) pages.push('ellipsis')
+    pages.push(totalPages - 1)
+    return pages
+  }
+
+  const pageNumbers = getPageNumbers(safePage, totalPages)
 
   const hasPlans = plans.length > 0
   const totalWatched = plans.reduce((acc, p) => acc + (p.watchedEpisodes?.length ?? 0), 0)
@@ -107,12 +144,16 @@ export default function HomePageContent() {
               {/* Badge */}
               <motion.div
                 animate={{ opacity: 1, y: 0 }}
-                className="mb-8 inline-flex items-center gap-2 rounded-full border border-purple-500/20 bg-purple-500/10 px-4 py-1.5"
                 initial={{ opacity: 0, y: -10 }}
                 transition={{ delay: 0.1, duration: 0.4 }}
               >
-                <div className="size-2 rounded-full bg-purple-500/70" />
-                <span className="text-xs font-medium text-purple-300">Planejador de maratonas</span>
+                <Badge
+                  className="mb-8 h-auto gap-2 rounded-full border-purple-500/20 bg-purple-500/10 px-4 py-1.5 text-purple-300"
+                  variant="outline"
+                >
+                  <div className="size-2 rounded-full bg-purple-500/70" />
+                  <span className="text-xs font-medium">Planejador de maratonas</span>
+                </Badge>
               </motion.div>
               {/* Title */}
               <h1 className="text-4xl leading-[1.1] font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">
@@ -314,15 +355,16 @@ export default function HomePageContent() {
                       },
                     ] as const
                   ).map((t) => (
-                    <button
+                    <Button
                       className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 ${
                         tab === t.key
                           ? 'bg-purple-500/20 text-purple-300 shadow-sm'
                           : 'text-white/40 hover:bg-white/5 hover:text-white/60'
                       }`}
                       key={t.key}
-                      onClick={() => setTab(t.key)}
-                      type="button"
+                      onClick={() => handleTabChange(t.key)}
+                      size="sm"
+                      variant="ghost"
                     >
                       {t.label}
                       <span
@@ -334,19 +376,127 @@ export default function HomePageContent() {
                       >
                         {t.count}
                       </span>
-                    </button>
+                    </Button>
                   ))}
                 </div>
 
                 {/* Cards grid */}
                 {filteredPlans.length > 0 ? (
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    {filteredPlans.map((plan) => (
-                      <div key={plan.id}>
-                        <AnimePlanCard onDelete={handleDeletePlan} plan={plan} />
+                  <>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {paginatedPlans.map((plan) => (
+                        <div key={plan.id}>
+                          <AnimePlanCard onDelete={handleDeletePlan} plan={plan} />
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                      <div className="flex flex-col items-center gap-3 pt-2 sm:flex-row sm:justify-between">
+                        {/* Items per page */}
+                        <div className="flex items-center gap-2 text-xs text-white/40">
+                          <span className="hidden sm:inline">Por página:</span>
+                          <div className="flex gap-1">
+                            {ITEMS_PER_PAGE_OPTIONS.map((opt) => (
+                              <Button
+                                className={`rounded-md px-2 py-1 text-xs font-medium transition-all duration-200 ${
+                                  safePerPage === opt
+                                    ? 'bg-purple-500/20 text-purple-400'
+                                    : 'text-white/40 hover:bg-white/5 hover:text-white/60'
+                                }`}
+                                key={opt}
+                                onClick={() => handlePerPageChange(opt)}
+                                size="xs"
+                                variant="ghost"
+                              >
+                                {opt}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Page controls */}
+                        <div className="flex items-center gap-1">
+                          {/* Previous */}
+                          <Button
+                            className="flex size-7 items-center justify-center rounded-md text-xs text-white/40 hover:bg-white/5 hover:text-white/60 disabled:opacity-20 disabled:hover:bg-transparent"
+                            disabled={safePage === 0}
+                            onClick={() => setPage(safePage - 1)}
+                            size="icon-xs"
+                            title="Página anterior"
+                            variant="ghost"
+                          >
+                            <svg
+                              className="size-3"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                d="M15 19l-7-7 7-7"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                              />
+                            </svg>
+                          </Button>
+
+                          {/* Page numbers */}
+                          <div className="mx-1 flex items-center gap-0.5">
+                            {pageNumbers.map((p, idx) =>
+                              p === 'ellipsis' ? (
+                                <span
+                                  className="flex size-7 items-center justify-center text-xs text-white/20"
+                                  key={`ellipsis-${idx}`}
+                                >
+                                  ...
+                                </span>
+                              ) : (
+                                <Button
+                                  className={`flex size-7 items-center justify-center rounded-md text-xs font-medium transition-all duration-200 ${
+                                    p === safePage
+                                      ? 'bg-purple-500/20 text-purple-400'
+                                      : 'text-white/50 hover:bg-white/5 hover:text-white/70'
+                                  }`}
+                                  key={p}
+                                  onClick={() => setPage(p)}
+                                  size="icon-xs"
+                                  variant="ghost"
+                                >
+                                  {p + 1}
+                                </Button>
+                              ),
+                            )}
+                          </div>
+
+                          {/* Next */}
+                          <Button
+                            className="flex size-7 items-center justify-center rounded-md text-xs text-white/40 hover:bg-white/5 hover:text-white/60 disabled:opacity-20 disabled:hover:bg-transparent"
+                            disabled={safePage >= totalPages - 1}
+                            onClick={() => setPage(safePage + 1)}
+                            size="icon-xs"
+                            title="Próxima página"
+                            variant="ghost"
+                          >
+                            <svg
+                              className="size-3"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                d="M9 5l7 7-7 7"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                              />
+                            </svg>
+                          </Button>
+                        </div>
                       </div>
-                    ))}
-                  </div>
+                    )}
+                  </>
                 ) : (
                   <div className="flex flex-col items-center gap-2 py-12 text-center">
                     <p className="text-sm text-white/40">

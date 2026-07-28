@@ -186,17 +186,18 @@ export function RoutineForm({
             type="date"
             {...register('startDate')}
           />
-          <button
+          <Button
             aria-label="Definir data para hoje"
-            className="absolute top-1/2 left-2 -translate-y-1/2 rounded-md bg-purple-500/15 px-2 py-0.5 text-[10px] font-medium text-purple-400 transition-colors hover:bg-purple-500/25"
-            onClick={(e) => {
-              e.preventDefault()
+            className="absolute top-1/2 left-2 -translate-y-1/2 rounded-md bg-purple-500/15 px-2 py-0.5 text-[10px] font-medium text-purple-400 hover:bg-purple-500/25"
+            onClick={() =>
               setValue('startDate', getLocalDateString(new Date()), { shouldValidate: true })
-            }}
+            }
+            size="xs"
             type="button"
+            variant="ghost"
           >
             Hoje
-          </button>
+          </Button>
         </div>
         {errors.startDate && <p className="text-xs text-red-400">{errors.startDate.message}</p>}
       </div>
@@ -206,21 +207,20 @@ export function RoutineForm({
         <Label className="text-sm font-medium text-white/70">Dias disponíveis</Label>
         <div className="flex flex-wrap gap-1.5 sm:gap-2">
           {DAYS.map((day) => (
-            <button
+            <Button
               className={`flex h-9 w-10 shrink-0 items-center justify-center rounded-lg border text-[11px] font-medium transition-all duration-200 sm:h-10 sm:w-12 sm:text-xs ${
                 watchDays?.includes(day.value)
                   ? 'border-purple-500/50 bg-purple-500/20 text-purple-300 shadow-sm shadow-purple-500/20'
                   : 'border-white/10 bg-white/5 text-white/40 hover:border-white/20 hover:text-white/60'
               }`}
               key={day.value}
-              onClick={(e) => {
-                e.preventDefault()
-                toggleDay(day.value)
-              }}
+              onClick={() => toggleDay(day.value)}
+              size="icon-sm"
               type="button"
+              variant="ghost"
             >
               {day.label}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -257,21 +257,20 @@ export function RoutineForm({
         />
         <div className="flex flex-wrap gap-1.5">
           {QUICK_EPISODES.map((ep) => (
-            <button
+            <Button
               className={`rounded-md border px-2.5 py-1 text-[11px] font-medium transition-all ${
                 !Number.isNaN(watchEpisodes) && watchEpisodes === ep
                   ? 'border-purple-500/50 bg-purple-500/20 text-purple-300 shadow-sm shadow-purple-500/20'
                   : 'border-white/10 bg-white/5 text-white/40 hover:border-purple-500/30 hover:text-purple-400'
               }`}
               key={ep}
-              onClick={(e) => {
-                e.preventDefault()
-                setValue('episodesPerDay', ep, { shouldValidate: true })
-              }}
+              onClick={() => setValue('episodesPerDay', ep, { shouldValidate: true })}
+              size="xs"
               type="button"
+              variant="ghost"
             >
               {ep} ep
-            </button>
+            </Button>
           ))}
         </div>
         {errors.episodesPerDay && (
@@ -348,16 +347,15 @@ export function RoutineForm({
           <Label className="text-sm font-medium text-white/70">Temporadas</Label>
           <div className="flex items-center gap-2">
             {apiSuggestion && (
-              <button
-                className="rounded-md bg-purple-500/15 px-2 py-1 text-[10px] text-purple-400 transition-colors hover:bg-purple-500/25"
-                onClick={(e) => {
-                  e.preventDefault()
-                  applyApiSuggestion()
-                }}
+              <Button
+                className="rounded-md bg-purple-500/15 px-2 py-1 text-[10px] text-purple-400 hover:bg-purple-500/25"
+                onClick={() => applyApiSuggestion()}
+                size="xs"
                 type="button"
+                variant="ghost"
               >
                 API: {apiSuggestion}ep
-              </button>
+              </Button>
             )}
             <span className="text-xs text-white/40">
               Total: <strong className="text-purple-400">{totalEpisodes}</strong> eps
@@ -401,13 +399,12 @@ export function RoutineForm({
                 />
 
                 {seasons.length > 1 && (
-                  <button
-                    className="flex size-7 shrink-0 items-center justify-center rounded-md text-xs text-red-400/50 transition-colors hover:bg-red-500/10 hover:text-red-400"
-                    onClick={(e) => {
-                      e.preventDefault()
-                      removeSeason(index)
-                    }}
+                  <Button
+                    className="flex size-7 shrink-0 items-center justify-center rounded-md text-xs text-red-400/50 hover:bg-red-500/10 hover:text-red-400"
+                    onClick={() => removeSeason(index)}
+                    size="icon-xs"
                     type="button"
+                    variant="ghost"
                   >
                     <svg className="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
@@ -417,26 +414,25 @@ export function RoutineForm({
                         strokeWidth={2}
                       />
                     </svg>
-                  </button>
+                  </Button>
                 )}
               </div>
             </motion.div>
           ))}
         </div>
 
-        <button
-          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/10 py-2 text-xs text-white/40 transition-colors hover:border-purple-500/30 hover:text-purple-400"
-          onClick={(e) => {
-            e.preventDefault()
-            addSeason()
-          }}
+        <Button
+          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/10 py-2 text-xs text-white/40 hover:border-purple-500/30 hover:text-purple-400"
+          onClick={() => addSeason()}
+          size="sm"
           type="button"
+          variant="ghost"
         >
           <svg className="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path d="M12 4v16m8-8H4" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
           </svg>
           Adicionar temporada
-        </button>
+        </Button>
 
         <p className="text-xs text-white/30">
           Adicione quantas temporadas quiser. Ex: T1=12ep, T2=24ep, T3=12ep
