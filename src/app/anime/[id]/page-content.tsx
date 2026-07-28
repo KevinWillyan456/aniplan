@@ -1,5 +1,8 @@
 'use client'
 
+import confetti from 'canvas-confetti'
+import { format, parseISO } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 import { motion } from 'motion/react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -25,6 +28,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { usePreventDoubleClick } from '@/hooks/use-prevent-double-click'
 import {
   deleteAnimePlan,
   getAnimePlanById,
@@ -45,8 +49,12 @@ const STAT_STYLES = {
 export default function AnimeDetailContent() {
   const params = useParams()
   const router = useRouter()
+  const { submit: submitDelete, submitting: deleting } = usePreventDoubleClick()
+  const { submit: submitToggle } = usePreventDoubleClick()
+  const { submit: submitBatch } = usePreventDoubleClick()
   const [plan, setPlan] = useState<AnimePlan | null>(null)
   const [loading, setLoading] = useState(true)
+  const [entering, setEntering] = useState(true)
 
   useEffect(() => {
     const id = params.id as string
@@ -62,29 +70,113 @@ export default function AnimeDetailContent() {
     })
   }, [params.id])
 
+  useEffect(() => {
+    const timer = setTimeout(() => setEntering(false), 1000)
+    return () => clearTimeout(timer)
+  }, [])
+
   function handleToggleEpisode(episodeNumber: number, watched: boolean) {
-    if (!plan) return
-    const updated = updateEpisodeProgress(plan.id, episodeNumber, watched)
-    if (updated) {
-      setPlan({ ...updated })
-    }
+    submitToggle(() => {
+      if (!plan) return
+      const updated = updateEpisodeProgress(plan.id, episodeNumber, watched)
+      if (updated) {
+        setPlan({ ...updated })
+
+        // Celebração: todos episódios de um dia foram assistidos
+        if (watched && !plan.watchedEpisodes.includes(episodeNumber)) {
+          const completedDay = updated.schedule.find(
+            (day) =>
+              day.episodes.includes(episodeNumber) &&
+              day.episodes.length > 0 &&
+              day.episodes.every((ep) => updated.watchedEpisodes.includes(ep)),
+          )
+          if (completedDay) {
+            const parsed = parseISO(completedDay.date)
+            const label = format(parsed, "dd 'de' MMMM", { locale: ptBR })
+            fireDayConfetti()
+            toast.success('🎉 Dia completo!', {
+              description: `Todos os episódios de ${label} foram assistidos. Continue assim!`,
+              duration: 4500,
+            })
+
+            // Celebração extra: maratona inteira concluída!
+            const total = plan.totalEpisodes ?? plan.anime.episodes
+            if (
+              !isAnimeComplete(plan.watchedEpisodes, total) &&
+              isAnimeComplete(updated.watchedEpisodes, total)
+            ) {
+              fireCompleteConfetti()
+              toast.success('🏆 Maratona concluída!', {
+                description: `Você terminou todos os ${total} episódios de ${plan.anime.title}!`,
+                duration: 6000,
+              })
+            }
+          }
+        }
+      }
+    })
   }
 
   function handleBatchToggle(episodeNumbers: number[], watched: boolean) {
-    if (!plan) return
-    const updated = updateMultipleEpisodes(plan.id, episodeNumbers, watched)
-    if (updated) {
-      setPlan({ ...updated })
-    }
+    submitBatch(() => {
+      if (!plan) return
+      const updated = updateMultipleEpisodes(plan.id, episodeNumbers, watched)
+      if (updated) {
+        setPlan({ ...updated })
+
+        // Celebração para dias completos no batch
+        if (watched && episodeNumbers.length > 0) {
+          const completedDays = updated.schedule.filter(
+            (day) =>
+              day.episodes.some(
+                (ep) => episodeNumbers.includes(ep) && !plan.watchedEpisodes.includes(ep), // só episódios NOVOS
+              ) &&
+              day.episodes.length > 0 &&
+              day.episodes.every((ep) => updated.watchedEpisodes.includes(ep)),
+          )
+
+          if (completedDays.length === 1) {
+            const parsed = parseISO(completedDays[0].date)
+            const label = format(parsed, "dd 'de' MMMM", { locale: ptBR })
+            fireDayConfetti()
+            toast.success('🎉 Dia completo!', {
+              description: `Todos os episódios de ${label} foram assistidos.`,
+              duration: 4500,
+            })
+          } else if (completedDays.length > 1) {
+            fireDayConfetti()
+            toast.success(`🎉 ${completedDays.length} dias completos!`, {
+              description: `Você finalizou ${completedDays.length} dias de maratona de uma vez! Continue arrasando!`,
+              duration: 4500,
+            })
+          }
+
+          // Celebração extra: maratona inteira concluída!
+          const total = plan.totalEpisodes ?? plan.anime.episodes
+          if (
+            !isAnimeComplete(plan.watchedEpisodes, total) &&
+            isAnimeComplete(updated.watchedEpisodes, total)
+          ) {
+            fireCompleteConfetti()
+            toast.success('🏆 Maratona concluída!', {
+              description: `Você terminou todos os ${total} episódios de ${plan.anime.title}!`,
+              duration: 6000,
+            })
+          }
+        }
+      }
+    })
   }
 
   function handleDelete() {
-    if (!plan) return
-    deleteAnimePlan(plan.id)
-    toast.success('Maratona excluída', {
-      description: plan.anime.title,
+    submitDelete(() => {
+      if (!plan) return
+      deleteAnimePlan(plan.id)
+      toast.success('Maratona excluída', {
+        description: plan.anime.title,
+      })
+      router.push('/')
     })
-    router.push('/')
   }
 
   if (loading) {
@@ -172,7 +264,9 @@ export default function AnimeDetailContent() {
   ]
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#0a0a1a]">
+    <div
+      className={`min-h-screen ${entering ? 'overflow-hidden' : 'overflow-x-hidden'} bg-[#0a0a1a]`}
+    >
       {/* Background decoration */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute top-0 right-0 size-96 rounded-full bg-purple-500/3 blur-3xl" />
@@ -257,11 +351,12 @@ export default function AnimeDetailContent() {
                     Cancelar
                   </AlertDialogCancel>
                   <AlertDialogAction
-                    className="bg-red-600 text-white hover:bg-red-700"
+                    className="bg-red-600 text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={deleting}
                     onClick={handleDelete}
                     variant="destructive"
                   >
-                    Sim, excluir
+                    {deleting ? 'Excluindo...' : 'Sim, excluir'}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -401,22 +496,19 @@ export default function AnimeDetailContent() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4"
           initial={{ opacity: 0, y: 20 }}
-          transition={{ delay: 0.1, duration: 0.4 }}
+          transition={{ delay: 0.08, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
         >
-          {stats.map((stat, i) => {
+          {stats.map((stat) => {
             const s = STAT_STYLES[stat.color]
             return (
-              <motion.div
-                animate={{ opacity: 1, y: 0 }}
+              <div
                 className="group relative flex flex-col items-center justify-center overflow-hidden rounded-xl border border-white/4 bg-linear-to-br from-white/3 to-white/1 p-4 text-center transition-all duration-300 hover:border-white/8 hover:shadow-lg"
-                initial={{ opacity: 0, y: 20 }}
                 key={stat.label}
-                transition={{ delay: 0.1 + i * 0.05, duration: 0.35 }}
               >
                 <div className="absolute inset-0 bg-linear-to-br from-white/2 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 <p className={`relative text-2xl font-bold ${s.text}`}>{stat.value}</p>
                 <p className="relative mt-1 text-xs text-white/50">{stat.label}</p>
-              </motion.div>
+              </div>
             )
           })}
         </motion.div>
@@ -648,4 +740,43 @@ export default function AnimeDetailContent() {
       </main>
     </div>
   )
+}
+
+function fireCompleteConfetti() {
+  // Left side
+  confetti({
+    colors: ['#a78bfa', '#60a5fa', '#fbbf24', '#34d399', '#f472b6'],
+    origin: { x: 0, y: 0.6 },
+    particleCount: 100,
+    spread: 100,
+  })
+  // Right side
+  confetti({
+    colors: ['#a78bfa', '#60a5fa', '#fbbf24', '#34d399', '#f472b6'],
+    origin: { x: 1, y: 0.6 },
+    particleCount: 100,
+    spread: 100,
+  })
+  // Center burst (delayed for layered effect)
+  setTimeout(() => {
+    confetti({
+      colors: ['#fbbf24', '#a78bfa', '#f472b6', '#34d399'],
+      origin: { y: 0.5 },
+      particleCount: 80,
+      spread: 140,
+    })
+  }, 250)
+}
+
+function fireDayConfetti() {
+  confetti({
+    colors: ['#a78bfa', '#60a5fa', '#34d399'],
+    origin: { y: 0.7 },
+    particleCount: 35,
+    spread: 70,
+  })
+}
+
+function isAnimeComplete(watchedEpisodes: number[], totalEpisodes: number): boolean {
+  return watchedEpisodes.length >= totalEpisodes && totalEpisodes > 0
 }

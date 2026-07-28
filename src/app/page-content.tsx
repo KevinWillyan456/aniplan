@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from 'motion/react'
 import Link from 'next/link'
 import { parseAsInteger, parseAsStringEnum, useQueryState } from 'nuqs'
-import { startTransition, useEffect, useState } from 'react'
+import { startTransition, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import type { AnimePlan } from '@/types/anime'
@@ -11,11 +11,14 @@ import type { AnimePlan } from '@/types/anime'
 import { AnimePlanCard } from '@/components/anime/anime-plan-card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { usePreventDoubleClick } from '@/hooks/use-prevent-double-click'
 import { deleteAnimePlan, getAnimePlans } from '@/lib/storage'
 
 export default function HomePageContent() {
   const [plans, setPlans] = useState<AnimePlan[]>([])
   const [loaded, setLoaded] = useState(false)
+  const [entering, setEntering] = useState(true)
+  const [exitingIds, setExitingIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const allPlans = getAnimePlans()
@@ -25,27 +28,106 @@ export default function HomePageContent() {
       setLoaded(true)
     })
   }, [])
+
+  useEffect(() => {
+    const timer = setTimeout(() => setEntering(false), 1000)
+    return () => clearTimeout(timer)
+  }, [])
+
+  const { submit: submitDelete } = usePreventDoubleClick()
+  const homeTabsRef = useRef<HTMLDivElement>(null)
+  const [homeCanScrollLeft, setHomeCanScrollLeft] = useState(false)
+  const [homeCanScrollRight, setHomeCanScrollRight] = useState(false)
+
+  function checkHomeTabsScroll() {
+    const el = homeTabsRef.current
+    if (!el) return
+    setHomeCanScrollLeft(el.scrollLeft > 4)
+    setHomeCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 4)
+  }
+
+  // Detecta overflow nas tabs (re-executa quando loaded=true pra pegar o ref montado)
+  useEffect(() => {
+    const el = homeTabsRef.current
+    if (!el) return
+    checkHomeTabsScroll()
+    el.addEventListener('scroll', checkHomeTabsScroll)
+    const observer = new ResizeObserver(checkHomeTabsScroll)
+    observer.observe(el)
+    // eslint-disable-next-line consistent-return
+    return () => {
+      el.removeEventListener('scroll', checkHomeTabsScroll)
+      observer.disconnect()
+    }
+  }, [loaded])
+
   function handleDeletePlan(id: string) {
-    const plan = plans.find((p) => p.id === id)
-    deleteAnimePlan(id)
-    setPlans((prev) => prev.filter((p) => p.id !== id))
-    if (plan) {
+    submitDelete(() => {
+      const plan = plans.find((p) => p.id === id)
+      if (!plan) return
+
+      // Remove do localStorage imediatamente
+      deleteAnimePlan(id)
+
+      // Marca como "saindo" pra ativar a animação exit
+      setExitingIds((prev) => new Set(prev).add(id))
+
       toast.success('Maratona excluída', {
         description: plan.anime.title,
       })
-    }
+
+      // Remove do state depois da animação (300ms)
+      setTimeout(() => {
+        setPlans((prev) => prev.filter((p) => p.id !== id))
+        setExitingIds((prev) => {
+          const next = new Set(prev)
+          next.delete(id)
+          return next
+        })
+      }, 300)
+    })
   }
 
   const [tab, setTab] = useQueryState(
     'tab',
-    parseAsStringEnum(['all', 'completed', 'in-progress'] as const).withDefault('all'),
+    parseAsStringEnum(['all', 'today', 'delayed', 'completed', 'in-progress'] as const).withDefault(
+      'all',
+    ),
   )
+
+  // Restaura a última tab selecionada do localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('@aniplan/home-tab')
+    if (
+      saved === 'all' ||
+      saved === 'today' ||
+      saved === 'delayed' ||
+      saved === 'completed' ||
+      saved === 'in-progress'
+    ) {
+      setTab(saved)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(0))
   const [perPage, setPerPage] = useQueryState('perPage', parseAsInteger.withDefault(8))
 
   const ITEMS_PER_PAGE_OPTIONS = [4, 8, 12, 24] as const
   const safePerPage = ITEMS_PER_PAGE_OPTIONS.includes(perPage as never) ? perPage : 8
+
+  const todayStr = new Date().toLocaleDateString('en-CA') // yyyy-MM-dd no timezone local
+
+  const todayPlans = plans.filter((p) =>
+    p.schedule.some(
+      (s) => s.date === todayStr && s.episodes.some((ep) => !p.watchedEpisodes.includes(ep)),
+    ),
+  )
+
+  const delayedPlans = plans.filter((p) =>
+    p.schedule.some(
+      (s) => s.date < todayStr && s.episodes.some((ep) => !p.watchedEpisodes.includes(ep)),
+    ),
+  )
 
   const completedPlans = plans.filter(
     (p) => (p.watchedEpisodes?.length ?? 0) >= (p.totalEpisodes ?? p.anime.episodes),
@@ -55,7 +137,15 @@ export default function HomePageContent() {
   )
 
   const filteredPlans =
-    tab === 'all' ? plans : tab === 'completed' ? completedPlans : inProgressPlans
+    tab === 'all'
+      ? plans
+      : tab === 'today'
+        ? todayPlans
+        : tab === 'delayed'
+          ? delayedPlans
+          : tab === 'completed'
+            ? completedPlans
+            : inProgressPlans
 
   const totalPages = Math.max(1, Math.ceil(filteredPlans.length / safePerPage))
   const safePage = Math.min(page, totalPages - 1)
@@ -67,8 +157,9 @@ export default function HomePageContent() {
     setPage(0)
   }
 
-  function handleTabChange(key: 'all' | 'completed' | 'in-progress') {
+  function handleTabChange(key: 'all' | 'completed' | 'delayed' | 'in-progress' | 'today') {
     setTab(key)
+    localStorage.setItem('@aniplan/home-tab', key)
     setPage(0)
   }
 
@@ -93,7 +184,9 @@ export default function HomePageContent() {
   const totalEpisodesAll = plans.reduce((acc, p) => acc + (p.totalEpisodes ?? p.anime.episodes), 0)
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#0a0a1a]">
+    <div
+      className={`min-h-screen ${entering ? 'overflow-hidden' : 'overflow-x-hidden'} bg-[#0a0a1a]`}
+    >
       {/* ===== Header ===== */}
       <header className="sticky top-0 z-50 border-b border-white/4 bg-[#0a0a1a]/90 backdrop-blur-sm">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
@@ -339,56 +432,127 @@ export default function HomePageContent() {
                 </motion.div>
 
                 {/* Tabs */}
-                <div className="flex gap-1 rounded-xl border border-white/4 bg-white/2 p-1">
-                  {(
-                    [
-                      { count: plans.length, key: 'all' as const, label: 'Todas' },
-                      {
-                        count: inProgressPlans.length,
-                        key: 'in-progress' as const,
-                        label: 'Em andamento',
-                      },
-                      {
-                        count: completedPlans.length,
-                        key: 'completed' as const,
-                        label: 'Concluídas',
-                      },
-                    ] as const
-                  ).map((t) => (
-                    <Button
-                      className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 ${
-                        tab === t.key
-                          ? 'bg-purple-500/20 text-purple-300 shadow-sm'
-                          : 'text-white/40 hover:bg-white/5 hover:text-white/60'
-                      }`}
-                      key={t.key}
-                      onClick={() => handleTabChange(t.key)}
-                      size="sm"
-                      variant="ghost"
-                    >
-                      {t.label}
-                      <span
-                        className={`ml-1.5 rounded-md px-1.5 py-0.5 text-[10px] font-medium ${
+                <div className="relative">
+                  <div
+                    className="flex flex-nowrap gap-1 overflow-x-auto rounded-xl border border-white/4 bg-white/2 p-1 [&::-webkit-scrollbar]:hidden"
+                    onScroll={checkHomeTabsScroll}
+                    ref={homeTabsRef}
+                  >
+                    {(
+                      [
+                        { count: plans.length, key: 'all' as const, label: 'Todas' },
+                        {
+                          count: todayPlans.length,
+                          key: 'today' as const,
+                          label: 'Hoje',
+                        },
+                        {
+                          count: delayedPlans.length,
+                          key: 'delayed' as const,
+                          label: 'Atrasadas',
+                        },
+                        {
+                          count: inProgressPlans.length,
+                          key: 'in-progress' as const,
+                          label: 'Em andamento',
+                        },
+                        {
+                          count: completedPlans.length,
+                          key: 'completed' as const,
+                          label: 'Concluídas',
+                        },
+                      ] as const
+                    ).map((t) => (
+                      <Button
+                        className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 ${
                           tab === t.key
-                            ? 'bg-purple-500/20 text-purple-400'
-                            : 'bg-white/5 text-white/30'
+                            ? 'bg-purple-500/20 text-purple-300 shadow-sm'
+                            : 'text-white/40 hover:bg-white/5 hover:text-white/60'
                         }`}
+                        key={t.key}
+                        onClick={() => handleTabChange(t.key)}
+                        size="sm"
+                        variant="ghost"
                       >
-                        {t.count}
-                      </span>
-                    </Button>
-                  ))}
+                        {t.label}
+                        <AnimatePresence>
+                          {t.key === 'today' && t.count > 0 && (
+                            <motion.span
+                              animate={{ opacity: 1, scale: 1 }}
+                              className="ml-1.5 inline-block size-2 rounded-full bg-emerald-400/60 shadow-sm shadow-emerald-400/30"
+                              exit={{ opacity: 0, scale: 0.3 }}
+                              initial={{ opacity: 0, scale: 0 }}
+                              key="home-today-dot"
+                              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                            />
+                          )}
+                        </AnimatePresence>
+                        <AnimatePresence>
+                          {t.key === 'delayed' && t.count > 0 && (
+                            <motion.span
+                              animate={{ opacity: 1, scale: 1 }}
+                              className="ml-1.5 inline-block size-2 rounded-full bg-red-400/60 shadow-sm shadow-red-400/30"
+                              exit={{ opacity: 0, scale: 0.3 }}
+                              initial={{ opacity: 0, scale: 0 }}
+                              key="delayed-dot"
+                              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                            />
+                          )}
+                        </AnimatePresence>
+                        <span
+                          className={`ml-1.5 rounded-md px-1.5 py-0.5 text-[10px] font-medium ${
+                            tab === t.key
+                              ? 'bg-purple-500/20 text-purple-400'
+                              : 'bg-white/5 text-white/30'
+                          }`}
+                        >
+                          {t.count}
+                        </span>
+                      </Button>
+                    ))}
+                  </div>
+                  {/* Left fade indicator */}
+                  <div
+                    aria-hidden
+                    className={`pointer-events-none absolute inset-y-0 left-0 w-8 rounded-l-xl bg-linear-to-r from-[#0a0a1a] to-transparent transition-opacity duration-200 ${
+                      homeCanScrollLeft ? 'opacity-100' : 'opacity-0'
+                    }`}
+                  />
+                  {/* Right fade indicator */}
+                  <div
+                    aria-hidden
+                    className={`pointer-events-none absolute inset-y-0 right-0 w-8 rounded-r-xl bg-linear-to-r from-transparent to-[#0a0a1a] transition-opacity duration-200 ${
+                      homeCanScrollRight ? 'opacity-100' : 'opacity-0'
+                    }`}
+                  />
                 </div>
 
                 {/* Cards grid */}
                 {filteredPlans.length > 0 ? (
                   <>
                     <div className="grid gap-4 sm:grid-cols-2">
-                      {paginatedPlans.map((plan) => (
-                        <div key={plan.id}>
-                          <AnimePlanCard onDelete={handleDeletePlan} plan={plan} />
-                        </div>
-                      ))}
+                      <AnimatePresence>
+                        {paginatedPlans
+                          .filter((p) => !exitingIds.has(p.id))
+                          .map((plan) => (
+                            <motion.div
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{
+                                height: 0,
+                                marginBottom: 0,
+                                opacity: 0,
+                                overflow: 'hidden',
+                                scale: 0.8,
+                              }}
+                              initial={{ opacity: 0, scale: 0.9 }}
+                              key={plan.id}
+                              layout
+                              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                            >
+                              <AnimePlanCard onDelete={handleDeletePlan} plan={plan} />
+                            </motion.div>
+                          ))}
+                      </AnimatePresence>
                     </div>
 
                     {/* Pagination */}
@@ -500,14 +664,22 @@ export default function HomePageContent() {
                 ) : (
                   <div className="flex flex-col items-center gap-2 py-12 text-center">
                     <p className="text-sm text-white/40">
-                      {tab === 'completed'
-                        ? 'Nenhuma maratona concluída ainda'
-                        : 'Nenhuma maratona em andamento'}
+                      {tab === 'today'
+                        ? 'Nenhuma maratona com episódios para hoje'
+                        : tab === 'delayed'
+                          ? 'Nenhuma maratona com episódios atrasados'
+                          : tab === 'completed'
+                            ? 'Nenhuma maratona concluída ainda'
+                            : 'Nenhuma maratona em andamento'}
                     </p>
                     <p className="text-xs text-white/20">
-                      {tab === 'completed'
-                        ? 'Continue assistindo para completar suas maratonas!'
-                        : 'Crie uma nova maratona para começar!'}
+                      {tab === 'today'
+                        ? 'Aproveite para criar uma nova maratona!'
+                        : tab === 'delayed'
+                          ? 'Que bom, você está em dia com suas maratonas!'
+                          : tab === 'completed'
+                            ? 'Continue assistindo para completar suas maratonas!'
+                            : 'Crie uma nova maratona para começar!'}
                     </p>
                   </div>
                 )}

@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { usePreventDoubleClick } from '@/hooks/use-prevent-double-click'
 import { generateAnimeSchedule } from '@/lib/schedule-generator'
 import { generateId, getAnimePlanById, saveAnimePlan } from '@/lib/storage'
 import { getEpisodeNumberInSeason } from '@/types/anime'
@@ -74,6 +75,8 @@ export default function CreatePageContent() {
   const [endDate, setEndDate] = useState('')
   const [totalHours, setTotalHours] = useState(0)
   const [totalDays, setTotalDays] = useState(0)
+  const { submit: submitSave, submitting: saving } = usePreventDoubleClick()
+  const { submit: submitNav, submitting: navigating } = usePreventDoubleClick()
   const [isGenerating, setIsGenerating] = useState(false)
   const [hasModified, setHasModified] = useState(false)
   const [showExitDialog, setShowExitDialog] = useState(false)
@@ -120,12 +123,14 @@ export default function CreatePageContent() {
   }, [hasModified])
 
   function confirmNavigation(navigate: () => void) {
-    if (!hasModified) {
-      navigate()
-      return
-    }
-    pendingNavigationRef.current = navigate
-    setShowExitDialog(true)
+    submitNav(() => {
+      if (!hasModified) {
+        navigate()
+        return
+      }
+      pendingNavigationRef.current = navigate
+      setShowExitDialog(true)
+    })
   }
 
   function handleConfirmExit() {
@@ -175,38 +180,40 @@ export default function CreatePageContent() {
   }
 
   function handleSave() {
-    if (!selectedAnime || !routine) return
+    submitSave(() => {
+      if (!selectedAnime || !routine) return
 
-    const oldWatched = existingPlan?.watchedEpisodes ?? []
-    const filteredWatched = oldWatched.filter((ep) => ep <= routine.totalEpisodes)
-    const discardedCount = oldWatched.length - filteredWatched.length
+      const oldWatched = existingPlan?.watchedEpisodes ?? []
+      const filteredWatched = oldWatched.filter((ep) => ep <= routine.totalEpisodes)
+      const discardedCount = oldWatched.length - filteredWatched.length
 
-    const plan = {
-      anime: selectedAnime,
-      availableDays: routine.availableDays,
-      createdAt: existingPlan?.createdAt ?? new Date().toISOString(),
-      episodesPerDay: routine.episodesPerDay,
-      id: existingPlan?.id ?? generateId(),
-      schedule,
-      seasons: routine.seasons,
-      startDate: routine.startDate,
-      totalEpisodes: routine.totalEpisodes,
-      watchedEpisodes: filteredWatched,
-    }
+      const plan = {
+        anime: selectedAnime,
+        availableDays: routine.availableDays,
+        createdAt: existingPlan?.createdAt ?? new Date().toISOString(),
+        episodesPerDay: routine.episodesPerDay,
+        id: existingPlan?.id ?? generateId(),
+        schedule,
+        seasons: routine.seasons,
+        startDate: routine.startDate,
+        totalEpisodes: routine.totalEpisodes,
+        watchedEpisodes: filteredWatched,
+      }
 
-    saveAnimePlan(plan)
+      saveAnimePlan(plan)
 
-    toast.success('Maratona salva com sucesso!', {
-      description: selectedAnime.title,
-    })
-
-    if (discardedCount > 0) {
-      toast.warning(`Você reduziu o total para ${routine.totalEpisodes} episódios`, {
-        description: `${discardedCount} episódio${discardedCount > 1 ? 's' : ''} assistido${discardedCount > 1 ? 's' : ''} foi${discardedCount > 1 ? 'ram' : ''} removido${discardedCount > 1 ? 's' : ''} do progresso por exceder${discardedCount > 1 ? 'em' : ''} o novo total.`,
+      toast.success('Maratona salva com sucesso!', {
+        description: selectedAnime.title,
       })
-    }
 
-    router.push(`/anime/${plan.id}`)
+      if (discardedCount > 0) {
+        toast.warning(`Você reduziu o total para ${routine.totalEpisodes} episódios`, {
+          description: `${discardedCount} episódio${discardedCount > 1 ? 's' : ''} assistido${discardedCount > 1 ? 's' : ''} foi${discardedCount > 1 ? 'ram' : ''} removido${discardedCount > 1 ? 's' : ''} do progresso por exceder${discardedCount > 1 ? 'em' : ''} o novo total.`,
+        })
+      }
+
+      router.push(`/anime/${plan.id}`)
+    })
   }
 
   function formatDate(dateStr: string) {
@@ -404,16 +411,19 @@ export default function CreatePageContent() {
               </div>
               <div className="flex items-center">
                 <Button
-                  className="mb-2 flex items-center gap-1 text-xs text-white/40 hover:text-purple-400"
+                  className="mb-2 flex items-center gap-1 text-xs text-white/40 transition-all duration-200 hover:text-purple-400 disabled:cursor-not-allowed disabled:opacity-30"
+                  disabled={navigating}
                   onClick={() => {
-                    setSelectedAnime(null)
-                    setStep(0)
-                    setRoutine(null)
-                    setSchedule([])
-                    setEndDate('')
-                    setTotalHours(0)
-                    setTotalDays(0)
-                    setHasModified(false)
+                    submitNav(() => {
+                      setSelectedAnime(null)
+                      setStep(0)
+                      setRoutine(null)
+                      setSchedule([])
+                      setEndDate('')
+                      setTotalHours(0)
+                      setTotalDays(0)
+                      setHasModified(false)
+                    })
                   }}
                   size="sm"
                   variant="ghost"
@@ -607,22 +617,30 @@ export default function CreatePageContent() {
                 transition={{ delay: 0.3, duration: 0.35 }}
               >
                 <Button
-                  className="flex-1 border-white/6 bg-white/3 py-6 text-white/60 transition-all duration-300 hover:border-white/10 hover:bg-white/6 hover:text-white"
-                  onClick={() => setStep(1)}
+                  className="flex-1 border-white/6 bg-white/3 py-6 text-white/60 transition-all duration-300 hover:border-white/10 hover:bg-white/6 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+                  disabled={navigating}
+                  onClick={() => {
+                    submitNav(() => setStep(1))
+                  }}
                   variant="outline"
                 >
                   ← Voltar
                 </Button>
                 <Button
-                  className="group relative flex-1 overflow-hidden bg-linear-to-r from-purple-600 to-blue-600 py-6 text-base font-semibold text-white shadow-lg shadow-purple-500/20 transition-all duration-300 hover:from-purple-500 hover:to-blue-500 hover:shadow-xl hover:shadow-purple-500/30"
+                  className="group relative flex-1 overflow-hidden bg-linear-to-r from-purple-600 to-blue-600 py-6 text-base font-semibold text-white shadow-lg shadow-purple-500/20 transition-all duration-300 hover:from-purple-500 hover:to-blue-500 hover:shadow-xl hover:shadow-purple-500/30 disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={saving}
                   onClick={handleSave}
                 >
-                  <span className="relative z-10">Salvar maratona</span>
-                  <motion.div
-                    animate={{ x: ['-100%', '100%'] }}
-                    className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent"
-                    transition={{ duration: 2.5, ease: 'easeInOut', repeat: Infinity }}
-                  />
+                  <span className="relative z-10">
+                    {saving ? 'Salvando...' : 'Salvar maratona'}
+                  </span>
+                  {!saving && (
+                    <motion.div
+                      animate={{ x: ['-100%', '100%'] }}
+                      className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent"
+                      transition={{ duration: 2.5, ease: 'easeInOut', repeat: Infinity }}
+                    />
+                  )}
                 </Button>
               </motion.div>
             </motion.div>

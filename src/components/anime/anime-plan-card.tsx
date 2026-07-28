@@ -120,7 +120,7 @@ export function AnimePlanCard({ onDelete, plan }: AnimePlanCardProps) {
       {onDelete && (
         <>
           <Button
-            className="absolute top-2 right-2 z-10 flex size-7 items-center justify-center rounded-lg bg-red-500/10 text-red-400/60 opacity-0 transition-all duration-200 hover:bg-red-500/20 hover:text-red-400 max-sm:opacity-100"
+            className="absolute top-2 right-2 z-10 flex size-7 items-center justify-center rounded-lg bg-red-500/10 text-red-400/60 opacity-0 transition-all duration-200 group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-400 max-sm:opacity-100"
             onClick={handleDeleteClick}
             size="icon-xs"
             title="Excluir maratona"
