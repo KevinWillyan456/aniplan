@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import type { AnimePlan } from '@/types/anime'
 
 import { AnimePlanCard } from '@/components/anime/anime-plan-card'
+import { triggerSplashReplay } from '@/components/splash-screen'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { usePreventDoubleClick } from '@/hooks/use-prevent-double-click'
@@ -770,6 +771,14 @@ export default function HomePageContent() {
         <footer className="border-t border-white/4 py-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center justify-between gap-3 px-4 sm:flex-row">
             <div className="flex items-center gap-2 text-xs text-white/20">
+              <button
+                className="inline-flex cursor-pointer items-center justify-center rounded-md px-1 py-0.5 text-[9px] text-white/8 transition-all duration-200 hover:bg-purple-500/5 hover:text-purple-400/30"
+                onClick={triggerSplashReplay}
+                title="Ver introdução"
+                type="button"
+              >
+                ✦
+              </button>
               <span>AniPlan</span>
               <span className="text-white/8">·</span>
               <span>{new Date().getFullYear()}</span>

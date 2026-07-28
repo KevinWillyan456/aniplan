@@ -6,6 +6,7 @@ import './globals.css'
 
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
 
+import { SplashScreen } from '@/components/splash-screen'
 import { Toaster } from '@/components/ui/sonner'
 import { cn } from '@/lib/utils'
 
@@ -28,7 +29,9 @@ export default function RootLayout({
   return (
     <html className={cn('font-sans', inter.variable)} lang="pt-BR">
       <body className="antialiased">
-        <NuqsAdapter>{children}</NuqsAdapter>
+        <NuqsAdapter>
+          <SplashScreen>{children}</SplashScreen>
+        </NuqsAdapter>
         <Toaster />
       </body>
     </html>
